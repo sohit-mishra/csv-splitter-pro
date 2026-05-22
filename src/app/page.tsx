@@ -16,8 +16,10 @@ import {
   Trash2,
 } from "lucide-react";
 
+type RowData = Record<string, any>;
+
 export default function HomePage() {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<RowData[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [fileName, setFileName] = useState("");
 
@@ -33,7 +35,9 @@ export default function HomePage() {
   // Upload File
   // =========================================
 
-  const handleFileUpload = (e: any) => {
+  const handleFileUpload = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = e.target.files?.[0];
 
     if (!file) return;
@@ -42,24 +46,32 @@ export default function HomePage() {
 
     const reader = new FileReader();
 
-    reader.onload = (evt: any) => {
-      const binaryStr = evt.target.result;
+    reader.onload = (evt) => {
+      const binaryStr = evt.target?.result;
+
+      if (!binaryStr) return;
 
       const workbook = XLSX.read(binaryStr, {
         type: "binary",
       });
 
-      const sheetName = workbook.SheetNames[0];
+      const sheetName =
+        workbook.SheetNames[0];
 
-      const worksheet = workbook.Sheets[sheetName];
+      const worksheet =
+        workbook.Sheets[sheetName];
 
       const jsonData =
-        XLSX.utils.sheet_to_json(worksheet);
+        XLSX.utils.sheet_to_json<RowData>(
+          worksheet
+        );
 
       setData(jsonData);
 
       if (jsonData.length > 0) {
-        setHeaders(Object.keys(jsonData[0]));
+        setHeaders(
+          Object.keys(jsonData[0])
+        );
       }
     };
 
@@ -70,7 +82,9 @@ export default function HomePage() {
   // Remove Duplicate Phones
   // =========================================
 
-  const getUniqueData = (rows: any[]) => {
+  const getUniqueData = (
+    rows: RowData[]
+  ) => {
     const uniquePhones = new Set();
 
     return rows.filter((row) => {
@@ -92,65 +106,82 @@ export default function HomePage() {
   };
 
   // =========================================
-  // Split CSV ZIP
+  // Split ZIP Download
   // =========================================
 
-  const handleSplitDownload = async () => {
-    if (!customerHeader || !phoneHeader) {
-      alert("Select headers first");
-      return;
-    }
+  const handleSplitDownload =
+    async () => {
+      if (
+        !customerHeader ||
+        !phoneHeader
+      ) {
+        alert("Select headers first");
+        return;
+      }
 
-    const uniqueData = getUniqueData(data);
+      const uniqueData =
+        getUniqueData(data);
 
-    const zip = new JSZip();
+      const zip = new JSZip();
 
-    for (
-      let i = 0;
-      i < uniqueData.length;
-      i += splitSize
-    ) {
-      const chunk = uniqueData.slice(
-        i,
-        i + splitSize
-      );
+      for (
+        let i = 0;
+        i < uniqueData.length;
+        i += splitSize
+      ) {
+        const chunk = uniqueData.slice(
+          i,
+          i + splitSize
+        );
 
-      const exportData = chunk.map((row) => ({
-        customer_name:
-          row[customerHeader],
+        const exportData = chunk.map(
+          (row) => ({
+            customer_name:
+              row[customerHeader],
 
-        phone: row[phoneHeader],
-      }));
+            phone: row[phoneHeader],
+          })
+        );
 
-      const ws =
-        XLSX.utils.json_to_sheet(exportData);
+        const ws =
+          XLSX.utils.json_to_sheet(
+            exportData
+          );
 
-      const csv = XLSX.utils.sheet_to_csv(ws);
+        const csv =
+          XLSX.utils.sheet_to_csv(ws);
 
-      zip.file(
-        `split_${i / splitSize + 1}.csv`,
-        csv
-      );
-    }
+        zip.file(
+          `split_${
+            i / splitSize + 1
+          }.csv`,
+          csv
+        );
+      }
 
-    const content = await zip.generateAsync({
-      type: "blob",
-    });
+      const content =
+        await zip.generateAsync({
+          type: "blob",
+        });
 
-    saveAs(content, "split_files.zip");
-  };
+      saveAs(content, "split_files.zip");
+    };
 
   // =========================================
   // Full CSV Download
   // =========================================
 
   const handleWithoutSplit = () => {
-    if (!customerHeader || !phoneHeader) {
+    if (
+      !customerHeader ||
+      !phoneHeader
+    ) {
       alert("Select headers first");
       return;
     }
 
-    const uniqueData = getUniqueData(data);
+    const uniqueData =
+      getUniqueData(data);
 
     const exportData = uniqueData.map(
       (row) => ({
@@ -162,9 +193,12 @@ export default function HomePage() {
     );
 
     const ws =
-      XLSX.utils.json_to_sheet(exportData);
+      XLSX.utils.json_to_sheet(
+        exportData
+      );
 
-    const csv = XLSX.utils.sheet_to_csv(ws);
+    const csv =
+      XLSX.utils.sheet_to_csv(ws);
 
     const blob = new Blob([csv], {
       type: "text/csv;charset=utf-8;",
@@ -174,98 +208,106 @@ export default function HomePage() {
   };
 
   // =========================================
-  // Combined ZIP
+  // Combined ZIP Download
   // =========================================
 
-  const handleCombinedZip = async () => {
-    if (!customerHeader || !phoneHeader) {
-      alert("Select headers first");
-      return;
-    }
+  const handleCombinedZip =
+    async () => {
+      if (
+        !customerHeader ||
+        !phoneHeader
+      ) {
+        alert("Select headers first");
+        return;
+      }
 
-    const uniqueData = getUniqueData(data);
+      const uniqueData =
+        getUniqueData(data);
 
-    const zip = new JSZip();
+      const zip = new JSZip();
 
-    // =====================================
-    // Split Folder
-    // =====================================
+      // Split Folder
 
-    const splitFolder =
-      zip.folder("split_files");
+      const splitFolder =
+        zip.folder("split_files");
 
-    for (
-      let i = 0;
-      i < uniqueData.length;
-      i += splitSize
-    ) {
-      const chunk = uniqueData.slice(
-        i,
-        i + splitSize
+      for (
+        let i = 0;
+        i < uniqueData.length;
+        i += splitSize
+      ) {
+        const chunk = uniqueData.slice(
+          i,
+          i + splitSize
+        );
+
+        const exportData = chunk.map(
+          (row) => ({
+            customer_name:
+              row[customerHeader],
+
+            phone: row[phoneHeader],
+          })
+        );
+
+        const ws =
+          XLSX.utils.json_to_sheet(
+            exportData
+          );
+
+        const csv =
+          XLSX.utils.sheet_to_csv(ws);
+
+        splitFolder?.file(
+          `split_${
+            i / splitSize + 1
+          }.csv`,
+          csv
+        );
+      }
+
+      // Full CSV Folder
+
+      const fullFolder =
+        zip.folder("full_csv");
+
+      const allData = uniqueData.map(
+        (row) => ({
+          customer_name:
+            row[customerHeader],
+
+          phone: row[phoneHeader],
+        })
       );
 
-      const exportData = chunk.map((row) => ({
-        customer_name:
-          row[customerHeader],
+      const wsAll =
+        XLSX.utils.json_to_sheet(
+          allData
+        );
 
-        phone: row[phoneHeader],
-      }));
+      const csvAll =
+        XLSX.utils.sheet_to_csv(wsAll);
 
-      const ws =
-        XLSX.utils.json_to_sheet(exportData);
-
-      const csv = XLSX.utils.sheet_to_csv(ws);
-
-      splitFolder?.file(
-        `split_${i / splitSize + 1}.csv`,
-        csv
+      fullFolder?.file(
+        "customers.csv",
+        csvAll
       );
-    }
 
-    // =====================================
-    // Full CSV Folder
-    // =====================================
+      // Download ZIP
 
-    const fullFolder =
-      zip.folder("full_csv");
+      const content =
+        await zip.generateAsync({
+          type: "blob",
+        });
 
-    const allData = uniqueData.map(
-      (row) => ({
-        customer_name:
-          row[customerHeader],
-
-        phone: row[phoneHeader],
-      })
-    );
-
-    const wsAll =
-      XLSX.utils.json_to_sheet(allData);
-
-    const csvAll =
-      XLSX.utils.sheet_to_csv(wsAll);
-
-    fullFolder?.file(
-      "customers.csv",
-      csvAll
-    );
-
-    // =====================================
-    // Download ZIP
-    // =====================================
-
-    const content = await zip.generateAsync({
-      type: "blob",
-    });
-
-    saveAs(content, "combined_download.zip");
-  };
-
-  // =========================================
-  // UI
-  // =========================================
+      saveAs(
+        content,
+        "combined_download.zip"
+      );
+    };
 
   return (
-    <main className="min-h-screen bg-black text-white overflow-hidden relative">
+    <main className="min-h-screen bg-black text-white relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,#2563eb33,transparent_30%),radial-gradient(circle_at_bottom_left,#9333ea33,transparent_30%)]" />
 
@@ -286,7 +328,7 @@ export default function HomePage() {
             <Database className="text-cyan-400" />
 
             <span className="text-sm tracking-widest">
-              CSV SPLIT TOOL
+              CSV SPLITTER PRO
             </span>
           </div>
 
@@ -295,8 +337,10 @@ export default function HomePage() {
           </h1>
 
           <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
-            Upload Excel or CSV and remove
-            duplicate phone numbers automatically.
+            Upload Excel or CSV files,
+            remove duplicate phone
+            numbers and download ZIP
+            exports beautifully.
           </p>
         </motion.div>
 
@@ -329,7 +373,9 @@ export default function HomePage() {
             <input
               type="file"
               accept=".csv,.xlsx,.xls"
-              onChange={handleFileUpload}
+              onChange={
+                handleFileUpload
+              }
               className="hidden"
             />
           </label>
@@ -356,8 +402,8 @@ export default function HomePage() {
         {/* Header Selection */}
         {headers.length > 0 && (
           <div className="grid md:grid-cols-2 gap-8 mb-10">
-            {/* Customer */}
-            <div className="bg-white/5 border border-white/10 rounded-[30px] p-8 backdrop-blur-xl">
+            {/* Customer Header */}
+            <div className="bg-white/5 border border-white/10 rounded-[30px] p-8">
               <h2 className="text-3xl font-bold mb-4">
                 Customer Name Header
               </h2>
@@ -386,8 +432,8 @@ export default function HomePage() {
               </select>
             </div>
 
-            {/* Phone */}
-            <div className="bg-white/5 border border-white/10 rounded-[30px] p-8 backdrop-blur-xl">
+            {/* Phone Header */}
+            <div className="bg-white/5 border border-white/10 rounded-[30px] p-8">
               <h2 className="text-3xl font-bold mb-4">
                 Phone Header
               </h2>
@@ -442,15 +488,18 @@ export default function HomePage() {
                 value={splitSize}
                 onChange={(e) =>
                   setSplitSize(
-                    Number(e.target.value)
+                    Number(
+                      e.target.value
+                    )
                   )
                 }
                 className="w-full bg-black/40 border border-zinc-700 rounded-2xl p-5 mb-6 text-lg"
-                placeholder="Rows per file"
               />
 
               <button
-                onClick={handleSplitDownload}
+                onClick={
+                  handleSplitDownload
+                }
                 className="w-full bg-cyan-400 hover:bg-cyan-300 text-black font-bold py-5 rounded-2xl"
               >
                 <div className="flex items-center justify-center gap-3 text-lg">
@@ -473,12 +522,14 @@ export default function HomePage() {
               </div>
 
               <p className="text-zinc-400 mb-14">
-                Download full CSV without
-                duplicate phones.
+                Download full CSV
+                without duplicate phones.
               </p>
 
               <button
-                onClick={handleWithoutSplit}
+                onClick={
+                  handleWithoutSplit
+                }
                 className="w-full bg-emerald-400 hover:bg-emerald-300 text-black font-bold py-5 rounded-2xl"
               >
                 <div className="flex items-center justify-center gap-3 text-lg">
@@ -501,12 +552,14 @@ export default function HomePage() {
               </div>
 
               <p className="text-zinc-400 mb-14">
-                Download split files + full CSV
-                together.
+                Download split files +
+                full CSV together.
               </p>
 
               <button
-                onClick={handleCombinedZip}
+                onClick={
+                  handleCombinedZip
+                }
                 className="w-full bg-purple-400 hover:bg-purple-300 text-black font-bold py-5 rounded-2xl"
               >
                 <div className="flex items-center justify-center gap-3 text-lg">
@@ -527,12 +580,14 @@ export default function HomePage() {
 
             <div>
               <h3 className="text-2xl font-bold">
-                Duplicate Phone Remove Enabled
+                Duplicate Phone Remove
+                Enabled
               </h3>
 
               <p className="text-zinc-400 mt-2">
-                Same phone numbers automatically
-                removed before download.
+                Same phone numbers are
+                automatically removed
+                before download.
               </p>
             </div>
           </div>
