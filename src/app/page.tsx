@@ -556,6 +556,18 @@ export default function HomePage() {
                 full CSV together.
               </p>
 
+                   <input
+                type="number"
+                value={splitSize}
+                onChange={(e) =>
+                  setSplitSize(
+                    Number(
+                      e.target.value
+                    )
+                  )
+                }
+                className="w-full bg-black/40 border border-zinc-700 rounded-2xl p-5 mb-6 text-lg"
+              />
               <button
                 onClick={
                   handleCombinedZip
